@@ -18,10 +18,12 @@ public:
 	}
 
 	void makeMove(const Move_t& move) {
-		MonteCarloNode<GameState_t> nextNode = root->getNextState(move);
-		nextNode.parent = nullptr;
-		delete root;
-		root = nextNode;
+		MonteCarloNode<GameState_t, Move_t>* nextNode = root->getNextState(move);
+		if (nextNode != nullptr) {
+			nextNode->detachFromParent();
+			delete root;
+			root = nextNode;
+		}
 	}
 
 	bool mctsStep(const int rolloutDepth) {

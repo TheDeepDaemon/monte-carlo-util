@@ -65,6 +65,10 @@ public:
 		return new MonteCarloNode<GameState_t, Move_t>(startingGameState, nullptr);
 	}
 
+	void detachFromParent() {
+		parent = nullptr;
+	}
+
 	void expand() {
 		if (!expanded) {
 			expanded = true;
@@ -92,6 +96,7 @@ public:
 				return it->second;
 			}
 		}
+		return nullptr;
 	}
 
 	GameState* getGameState() {
@@ -139,7 +144,7 @@ public:
 			return highestChild;
 		}
 		else {
-			return pair<Move_t, MonteCarloNode<GameState_t, Move_t>*>(Move_t(-1), this);
+			return pair<Move_t, MonteCarloNode<GameState_t, Move_t>*>(Move_t(), this);
 		}
 	}
 
