@@ -39,23 +39,36 @@ private:
 	MonteCarloNode(const GameState* gameState, MonteCarloNode<GameState_t, Move_t>* parent_) :
 		curGameState(gameState), parent(parent_), playerToMove(curGameState->getPlayerToMove()) {
 		ASSERT(curGameState != nullptr, "Game state cannot be null.");
-		if (curGameState != nullptr && curGameState->getWinValue() != 0) {
+		if (curGameState != nullptr && curGameState->isTerminal()) {
 			terminal = true;
 			expanded = true;
 		}
 	}
 
-public:
-
-	~MonteCarloNode() {
+	void deleteChildren() {
 		for (auto it = nextStates.begin(); it != nextStates.end(); ++it) {
 			MonteCarloNode<GameState_t, Move_t>* child = it->second;
 			if (child != nullptr && child->parent == this) {
 				delete child;
 			}
 		}
+	}
+
+public:
+
+	~MonteCarloNode() {
+		deleteChildren();
 		if (curGameState != nullptr) {
 			delete curGameState;
+		}
+	}
+
+	MonteCarloNode(const GameState_t& startingGameState) :
+		curGameState(new GameState_t(startingGameState)), parent(nullptr), playerToMove(curGameState->getPlayerToMove()) {
+		ASSERT(curGameState != nullptr, "Game state cannot be null.");
+		if (curGameState != nullptr && curGameState->isTerminal()) {
+			terminal = true;
+			expanded = true;
 		}
 	}
 
@@ -63,6 +76,11 @@ public:
 		GameState* startingGameState = new GameState_t();
 		startingGameState->setAtBeginningState();
 		return new MonteCarloNode<GameState_t, Move_t>(startingGameState, nullptr);
+	}
+
+	void clearTree() {
+		deleteChildren();
+		nextStates.clear();
 	}
 
 	void detachFromParent() {
@@ -75,6 +93,7 @@ public:
 			list<Move_t> moves = curGameState->getPossibleMoves();
 
 			nextStates.reserve(moves.size());
+
 			for (const Move_t& move : moves) {
 				const GameState_t* ptr = (GameState_t*)curGameState;
 				MonteCarloNode<GameState_t, Move_t>* newNode = new MonteCarloNode<GameState_t, Move_t>(new GameState_t(*ptr, move), this);
@@ -120,10 +139,10 @@ public:
 
 		int numWins = 0;
 		if (playerToMove == 1) {
-			numWins = p1Wins;
+			numWins = p2Wins - p1Wins;
 		}
 		else if (playerToMove == -1) {
-			numWins = p2Wins;
+			numWins = p1Wins - p2Wins;
 		}
 
 		return ucb1(numWins, numRollouts, parent->numRollouts);
@@ -133,18 +152,34 @@ public:
 		if (!terminal) {
 			pair<Move_t, MonteCarloNode<GameState_t, Move_t>*> highestChild = nextStates[0];
 			double highestValue = highestChild.second->getUCB1();
-			for (size_t i = 0; i < nextStates.size(); i++) {
-				pair<Move_t, MonteCarloNode<GameState_t, Move_t>*> curChild = nextStates[i];
-				double curValue = curChild.second->getUCB1();
+			for (const pair<Move_t, MonteCarloNode<GameState_t, Move_t>*>& nextState : nextStates) {
+				double curValue = nextState.second->getUCB1();
 				if (curValue > highestValue) {
 					highestValue = curValue;
-					highestChild = curChild;
+					highestChild = nextState;
 				}
 			}
 			return highestChild;
 		}
 		else {
 			return pair<Move_t, MonteCarloNode<GameState_t, Move_t>*>(Move_t(), this);
+		}
+	}
+
+	void displayOptions() const {
+		for (const pair<Move_t, MonteCarloNode<GameState_t, Move_t>*>& nextState : nextStates) {
+			double curValue = nextState.second->getUCB1();
+			cout << " <" << nextState.first << ">: " << curValue;
+			cout << ", (" << nextState.second->p1Wins << ") (" << nextState.second->p2Wins << ")";
+			cout << " || ";
+		}
+		cout << "\n";
+	}
+
+	void displayNextLayerOptions() const {
+		for (const pair<Move_t, MonteCarloNode<GameState_t, Move_t>*>& nextState : nextStates) {
+			cout << nextState.first << " :: ";
+			nextState.second->displayOptions();
 		}
 	}
 

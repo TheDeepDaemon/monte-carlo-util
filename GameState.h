@@ -19,15 +19,17 @@ public:
 
 	virtual void setAtBeginningState() = 0;
 
+	virtual void makeMove(const Move& move) = 0;
+
 	virtual void print() const = 0;
 
 	virtual int getWinValue() const = 0;
 
 	virtual Move pickMove() const = 0;
 
-	virtual void makeMove(const Move& move) = 0;
-
 	virtual int getPlayerToMove() const = 0;
+
+	virtual bool isTerminal() const = 0;
 
 };
 

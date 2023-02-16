@@ -26,14 +26,14 @@ public:
 		}
 	}
 
-	bool mctsStep(const int rolloutDepth) {
+	void mctsStep(const int rolloutDepth) {
 		MonteCarloNode<GameState_t, Move_t>* selectedNode = root;
 
 		while (selectedNode->isExpanded()) {
 			if (selectedNode->isTerminal()) {
 				int winValue = selectedNode->getWinValue();
 				selectedNode->backprop(winValue);
-				return true; // early exit returns true
+				return;
 			}
 			selectedNode = selectedNode->getHighestUCB1().second;
 		}
@@ -41,17 +41,18 @@ public:
 		selectedNode->expand();
 		int rolloutResult = selectedNode->rollout(rolloutDepth);
 		selectedNode->backprop(rolloutResult);
-		return false; // normal exit returns false
 	}
 
 	Move_t monteCarloTreeSearch(const int numIterations, const int rolloutDepth) {
 		for (int i = 0; i < numIterations; i++) {
-			if (mctsStep(rolloutDepth)) {
-				break;
-			}
+			mctsStep(rolloutDepth);
 		}
 
 		return root->getHighestUCB1().first;
+	}
+
+	void displayOptions() {
+		root->displayOptions();
 	}
 
 };
